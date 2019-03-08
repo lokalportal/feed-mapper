@@ -1,5 +1,5 @@
 {
-  "name": "lopo-feed-mapper",
+  "name": "feed-mapper",
   "version": "1.0.0",
   "description": "Base Scaffold to create feed mapping cloud functions for Lokalportal",
   "main": "index.js",
@@ -8,11 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@gitlab.naymspace.de:lokalportal/lopo-feed-mapper.git"
+    "url": "git@github.com:lokalportal/feed-mapper.git"
   },
   "author": "Stefan Exner",
   "license": "ISC",
   "dependencies": {
+    "ajv": "^6.10.0",
     "axios": "^0.18.0",
     "moment-timezone": "^0.5.23",
     "xml2js": "^0.4.19"

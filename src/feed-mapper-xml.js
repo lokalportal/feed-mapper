@@ -26,7 +26,7 @@ class XMLFeedMapper {
     getJSONFeed() {
         return new Promise((resolve, reject) => {
             this.getFeed().then(xml => {
-                parseXMLString(xml, {trim: true}, (err, result) => {
+                parseXMLString(xml, {emptyTag: null, trim: true}, (err, result) => {
                     if (err)
                         reject(err);
                     else

@@ -1,4 +1,5 @@
 const moment = require('moment-timezone');
+const Ajv    = require('ajv');
 
 class ExternalEvent {
     constructor(eventData) {
@@ -7,7 +8,25 @@ class ExternalEvent {
     }
 
     extractUniqueEvents() {
-        return Promise.all(this.occurrences.map(o => this.generateEvent(o)));
+        return Promise.all(this.occurrences.map(o => this.generateEvent(o)))
+            .then(events => this.rejectInvalidEvents(events));
+    }
+
+    /**
+     * Filters out events which are not valid regarding the JSON schema
+     * for Lokalportal event imports
+     *
+     * @param events
+     */
+    rejectInvalidEvents(events) {
+        const schemaValidator = new Ajv({allErrors: true, schemaId: 'auto'});
+        schemaValidator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
+        let validate = schemaValidator.compile(require("../schemas/event.json"));
+
+        let validEvents = events.filter(e => validate(e));
+        let invalidEvents = events.filter(e => !validEvents.includes(e));
+        console.error(invalidEvents);
+        return validEvents;
     }
 
     generateEvent(occurrence) {
