@@ -1,5 +1,8 @@
 module.exports = {
+    AirbrakeLogger: require('./src/logger-airbrake'),
+    Configuration: require('./src/configuration'),
     ExternalEvent: require('./src/external-event'),
-    XMLFeedMapper: require('./src/feed-mapper-xml'),
-    MappingRequestHandler: require('./src/mapping-request-handler')
+    Logger: require('./src/logger'),
+    MappingRequestHandler: require('./src/mapping-request-handler'),
+    XMLFeedMapper: require('./src/feed-mapper-xml')
 };

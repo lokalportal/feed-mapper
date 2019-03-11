@@ -13,8 +13,10 @@
   "author": "Stefan Exner",
   "license": "ISC",
   "dependencies": {
+    "airbrake-js": "^1.6.5",
     "ajv": "^6.10.0",
     "axios": "^0.18.0",
+    "cross-fetch": "^3.0.1",
     "moment-timezone": "^0.5.23",
     "xml2js": "^0.4.19"
   }

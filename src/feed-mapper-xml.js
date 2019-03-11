@@ -9,7 +9,7 @@ class XMLFeedMapper {
      * @returns {Promise<String>} The feed's content
      */
     getFeed() {
-        return axios.get(this.feedUrl()).then(response => response.data)
+        return axios.get(this.constructor.feedUrl()).then(response => response.data);
     }
 
     /**
@@ -24,16 +24,17 @@ class XMLFeedMapper {
      * @returns {Promise<Object>} The parsed feed as javascript object
      */
     getJSONFeed() {
-        return new Promise((resolve, reject) => {
-            this.getFeed().then(xml => {
-                parseXMLString(xml, {emptyTag: null, trim: true}, (err, result) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(result);
+        return this.getFeed()
+            .then(xml => {
+                return new Promise((resolve, reject) => {
+                    parseXMLString(xml, {emptyTag: null, trim: true}, (err, result) => {
+                        if (err)
+                            reject(err);
+                        else
+                            resolve(result);
+                    });
                 });
             })
-        })
     }
 }
 
