@@ -31,9 +31,11 @@ class ExternalEvent {
         let validate = schemaValidator.compile(require("../schemas/event.json"));
 
         let validEvents = events.filter(e => validate(e));
-        let invalidEvents = events.filter(e => !validEvents.includes(e));
-        if (reportInvalid && invalidEvents.length)
-            ExternalEvent.reportInvalidEvents(invalidEvents);
+
+        if (reportInvalid && validEvents.length < events.length) {
+            ExternalEvent.reportInvalidEvents(events.filter(e => !validEvents.includes(e)));
+        }
+
         return validEvents;
     }
 
