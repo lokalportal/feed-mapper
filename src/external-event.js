@@ -42,14 +42,14 @@ class ExternalEvent {
     generateEvent(occurrence) {
         return {
             id: this.getID(occurrence),
-            externalLink: this.getExternalLink(),
+            external_link: this.getExternalLink(),
             title: this.getTitle(),
             body: this.getBody(),
-            startTime: this.getStartTimeString(occurrence),
-            endTime: this.getEndTimeString(occurrence),
+            start_time: this.getStartTimeString(occurrence),
+            end_time: this.getEndTimeString(occurrence),
             category: this.getCategory(),
             address: this.getAddress(occurrence),
-            imageURLs: this.getImageURLs()
+            image_urls: this.getImageURLs()
         }
     }
 

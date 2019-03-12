@@ -5,7 +5,7 @@
     "id": {
       "type": "string"
     },
-    "externalLink": {
+    "external_link": {
       "anyOf": [
         {
           "type": "string"
@@ -31,11 +31,11 @@
     "category": {
       "type": "string"
     },
-    "startTime": {
+    "start_time": {
       "type": "string",
       "format": "date-time"
     },
-    "endTime": {
+    "end_time": {
       "anyOf": [
         {
           "type": "string",
@@ -77,7 +77,7 @@
         "city"
       ]
     },
-    "imageURLs": {
+    "image_urls": {
       "type": "array",
       "items": {
         "type": "string"
@@ -86,13 +86,13 @@
   },
   "required": [
     "id",
-    "externalLink",
+    "external_link",
     "title",
     "body",
     "category",
-    "startTime",
-    "endTime",
+    "start_time",
+    "end_time",
     "address",
-    "imageURLs"
+    "image_urls"
   ]
 }
