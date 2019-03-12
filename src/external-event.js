@@ -47,6 +47,7 @@ class ExternalEvent {
             body: this.getBody(),
             startTime: this.getStartTimeString(occurrence),
             endTime: this.getEndTimeString(occurrence),
+            category: this.getCategory(),
             address: this.getAddress(occurrence),
             imageURLs: this.getImageURLs()
         }
