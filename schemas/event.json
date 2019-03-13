@@ -68,13 +68,17 @@
         },
         "city": {
           "type": "string"
+        },
+        "google_place_id": {
+          "type": "string"
         }
       },
       "required": [
         "description",
         "street",
         "zip",
-        "city"
+        "city",
+        "google_place_id"
       ]
     },
     "image_urls": {

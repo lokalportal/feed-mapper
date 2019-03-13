@@ -2,7 +2,7 @@ const moment = require('moment-timezone');
 const Ajv    = require('ajv');
 const Configuration = require('./configuration');
 const googleMapsClient = require('@google/maps').createClient({
-    key: 'AIzaSyCqDjgXsIkOIRpWo5b1LWztXDHjO1bBroA',
+    key: process.env.GOOGLE_PLACES_API_KEY,
     Promise: Promise
 });
 const placeIdCache = {};
