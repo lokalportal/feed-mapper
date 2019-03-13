@@ -1,6 +1,11 @@
 const moment = require('moment-timezone');
 const Ajv    = require('ajv');
 const Configuration = require('./configuration');
+const googleMapsClient = require('@google/maps').createClient({
+    key: 'AIzaSyCqDjgXsIkOIRpWo5b1LWztXDHjO1bBroA',
+    Promise: Promise
+});
+const placeIdCache = {};
 
 class ExternalEvent {
     constructor(eventData) {
@@ -40,26 +45,45 @@ class ExternalEvent {
     }
 
     generateEvent(occurrence) {
-        return {
-            id: this.getID(occurrence),
-            external_link: this.getExternalLink(),
-            title: this.getTitle(),
-            body: this.getBody(),
-            start_time: this.getStartTimeString(occurrence),
-            end_time: this.getEndTimeString(occurrence),
-            category: this.getCategory(),
-            address: this.getAddress(occurrence),
-            image_urls: this.getImageURLs()
-        }
+        return this.getAddress(occurrence)
+            .then(address => {
+                return {
+                    id: this.getID(occurrence),
+                    external_link: this.getExternalLink(),
+                    title: this.getTitle(),
+                    body: this.getBody(),
+                    start_time: this.getStartTimeString(occurrence),
+                    end_time: this.getEndTimeString(occurrence),
+                    category: this.getCategory(),
+                    image_urls: this.getImageURLs(),
+                    address: address
+                }
+            })
     }
 
     getAddress(occurrence) {
-        return {
+        let baseAddress = {
             description: this.getAddressDescription(occurrence),
             street: this.getAddressStreet(occurrence),
             zip: this.getAddressZip(occurrence),
             city: this.getAddressCity(occurrence),
-        }
+            google_place_id: null
+        };
+
+        return this.getGooglePlaceId(occurrence)
+            .then(placeID => {
+                return {...baseAddress, google_place_id: placeID}
+            })
+            .catch(err => {
+                Configuration.logger.error(err);
+                return baseAddress;
+            });
+    }
+
+    hasCompleteAddress(occurrence) {
+        return this.getAddressStreet(occurrence) &&
+            this.getAddressZip(occurrence) &&
+            this.getAddressCity(occurrence);
     }
 
     getStartTimeString(occurrence) {
@@ -69,6 +93,25 @@ class ExternalEvent {
     getEndTimeString(occurrence) {
         let endTime = this.getEndTime(occurrence);
         return endTime ? endTime.format() : endTime;
+    }
+
+    getGooglePlaceId(occurrence) {
+        if (!Configuration.automagicalGooglePlaceId || !this.hasCompleteAddress(occurrence))
+            return Promise.resolve(null);
+
+        let addressString = this.getPlacesLookupString(occurrence);
+
+        if (placeIdCache[addressString]) return placeIdCache[addressString];
+
+        return placeIdCache[addressString] = googleMapsClient.geocode({address: addressString})
+            .asPromise()
+            .then(response => {
+                if (response.json.status === 'ZERO_RESULTS') {
+                    Configuration.logger.error(`Zero Google Places results for "${addressString}"`);
+                    return null;
+                }
+                return response.json.results[0].place_id;
+            });
     }
 
     /**
