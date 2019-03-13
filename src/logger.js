@@ -5,6 +5,8 @@ class Logger {
 
     error(message, options = {}) {
         console.error(message);
+        if (Object.entries(options).length)
+            console.error(JSON.stringify(options, null, 2));
     }
 }
 
