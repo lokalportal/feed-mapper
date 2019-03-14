@@ -1,27 +1,31 @@
 const Configuration = require('./configuration');
 
 class MappingRequestHandler {
-    constructor(request, response, mapperClass) {
-        this.request = request;
-        this.response = response;
-        this.mapperClass = mapperClass;
-    }
+  constructor(request, response, mapperClass) {
+    this.request = request;
+    this.response = response;
+    this.MapperClass = mapperClass;
+  }
 
-    /**
+  /**
      * Loads the requested external feed, maps it to the format Lokalportal expects
      * and responds with the mapped version as JSON.
      */
-    handleRequest() {
-        Configuration.feedUrl  = this.mapperClass.feedUrl();
-        Configuration.feedName = this.mapperClass.feedName();
+  handleRequest() {
+    Configuration.feedUrl = this.MapperClass.feedUrl;
+    Configuration.feedName = this.MapperClass.feedName;
 
-        new this.mapperClass().getData()
-            .then(json => this.response.send({"data": json}))
-            .catch(error => {
-                Configuration.logger.error(error);
-                return this.response.send({"error": error.message, "stack": error.stack});
-            });
-    }
+    new this.MapperClass().getData(this.request.query)
+      .then(json => this.response.send({ 'data': json }))
+      .catch(error => {
+        Configuration.logger.error(error);
+
+        if (error instanceof Object)
+          return this.response.send({ error: error.message, stack: error.stack.split('\n') });
+        else
+          return this.response.send({ error: error });
+      });
+  }
 }
 
 module.exports = MappingRequestHandler;

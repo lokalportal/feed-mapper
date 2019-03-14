@@ -1,126 +1,98 @@
 const moment = require('moment-timezone');
-const Ajv    = require('ajv');
 const Configuration = require('./configuration');
 const googleMapsClient = require('@google/maps').createClient({
-    key: process.env.GOOGLE_PLACES_API_KEY,
-    Promise: Promise
+  key:     process.env.GOOGLE_PLACES_API_KEY,
+  Promise: Promise
 });
-const placeIdCache = {};
+const placeIDCache = {};
 
 class ExternalEvent {
-    constructor(eventData) {
-        this.data        = eventData;
-        this.occurrences = [eventData];
-    }
+  constructor(eventData) {
+    this.data = eventData;
+  }
 
-    static reportInvalidEvents(events) {
-        Configuration.logger.error(`${Configuration.feedName}: Invalid Events`, {
-            params: {events}
-        });
-    }
+  /****************************************************************
+    **                      JSON Generation
+    ****************************************************************/
 
-    extractUniqueEvents() {
-        return Promise.all(this.occurrences.map(o => this.generateEvent(o)));
-    }
-
-    /**
-     * Filters out events which are not valid regarding the JSON schema
-     * for Lokalportal event imports
-     *
-     * @param events
-     * @param reportInvalid
-     */
-    static validateEvents(events, reportInvalid = true) {
-        const schemaValidator = new Ajv({allErrors: true, schemaId: 'auto'});
-        schemaValidator.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
-        let validate = schemaValidator.compile(require("../schemas/event.json"));
-
-        let validEvents = events.filter(e => validate(e));
-
-        if (reportInvalid && validEvents.length < events.length) {
-            ExternalEvent.reportInvalidEvents(events.filter(e => !validEvents.includes(e)));
-        }
-
-        return validEvents;
-    }
-
-    generateEvent(occurrence) {
-        return this.getAddress(occurrence)
-            .then(address => {
-                return {
-                    id: this.getID(occurrence),
-                    external_link: this.getExternalLink(),
-                    title: this.getTitle(),
-                    body: this.getBody(),
-                    start_time: this.getStartTimeString(occurrence),
-                    end_time: this.getEndTimeString(occurrence),
-                    category: this.getCategory(),
-                    image_urls: this.getImageURLs(),
-                    address: address
-                }
-            })
-    }
-
-    getAddress(occurrence) {
-        let baseAddress = {
-            description: this.getAddressDescription(occurrence),
-            street: this.getAddressStreet(occurrence),
-            zip: this.getAddressZip(occurrence),
-            city: this.getAddressCity(occurrence),
-            google_place_id: null
+  toJSON() {
+    return this.buildAddressJSON()
+      .then(address => {
+        return {
+          id:            this.id,
+          external_link: this.externalLink,
+          title:         this.title,
+          body:          this.body,
+          start_time:    this.startTimeString,
+          end_time:      this.endTimeString,
+          category:      this.category,
+          image_urls:    this.imageURLs,
+          address:       address
         };
+      });
+  }
 
-        return this.getGooglePlaceId(occurrence)
-            .then(placeID => {
-                return {...baseAddress, google_place_id: placeID}
-            })
-            .catch(err => {
-                Configuration.logger.error(err);
-                return baseAddress;
-            });
-    }
+  buildAddressJSON() {
+    let baseAddress = Object.assign({}, this.address, { google_place_id: null });
 
-    hasCompleteAddress(occurrence) {
-        return this.getAddressStreet(occurrence) &&
-            this.getAddressZip(occurrence) &&
-            this.getAddressCity(occurrence);
-    }
+    return this.lookupGooglePlaceID()
+      .then(placeID => {
+        return { ...baseAddress, google_place_id: placeID };
+      })
+      .catch(err => {
+        Configuration.logger.error(err);
+        return baseAddress;
+      });
+  }
 
-    getStartTimeString(occurrence) {
-        return this.getStartTime(occurrence).format();
-    }
+  /****************************************************************
+    **                         Attributes
+    ****************************************************************/
 
-    getEndTimeString(occurrence) {
-        let endTime = this.getEndTime(occurrence);
-        return endTime ? endTime.format() : endTime;
-    }
+  get startTimeString() {
+    return this.startTime.format();
+  }
 
-    getGooglePlaceId(occurrence) {
-        if (!Configuration.automagicalGooglePlaceId || !this.hasCompleteAddress(occurrence))
-            return Promise.resolve(null);
+  get endTimeString() {
+    return (this.endTime && this.endTime.format()) || this.endTime;
+  }
 
-        let addressString = this.getPlacesLookupString(occurrence);
+  /****************************************************************
+    **                          Helpers
+    ****************************************************************/
 
-        if (placeIdCache[addressString]) return placeIdCache[addressString];
-
-        return placeIdCache[addressString] = googleMapsClient.geocode({address: addressString})
-            .asPromise()
-            .then(response => {
-                if (response.json.status === 'ZERO_RESULTS') {
-                    Configuration.logger.error(`Zero Google Places results for "${addressString}"`);
-                    return null;
-                }
-                return response.json.results[0].place_id;
-            });
-    }
-
-    /**
-     * Helpers
+  /**
+     * @returns {boolean} +true+ if the external event contains all necessary information to build
+     *   a complete address (city, zip and street)
      */
+  get hasCompleteAddress() {
+    return !!(this.address.street && this.address.city && this.address.zip);
+  }
 
-    static momentTime(datetimeString) {
-        return moment.tz(datetimeString, 'Europe/Berlin')
-    }
+  lookupGooglePlaceID() {
+    if (!Configuration.automagicalGooglePlaceId || !this.hasCompleteAddress)
+      return Promise.resolve(null);
+
+    // If we already have a cached promise for this lookup, simply return it
+    if (placeIDCache[this.placesLookupString]) return placeIDCache[this.placesLookupString];
+
+    // Otherwise, cache a new promise which performs the actual google places lookup
+    return placeIDCache[this.placesLookupString] = googleMapsClient.geocode({ address: this.placesLookupString })
+      .asPromise()
+      .then(response => {
+        if (response.json.status === 'ZERO_RESULTS') {
+          Configuration.logger.error(
+            `Zero Google Places results for "${this.placesLookupString}"`,
+            { params: { address: this.address } });
+          return null;
+        }
+        return response.json.results[0].place_id;
+      });
+  }
+
+  static momentTime(datetimeString) {
+    return moment.tz(datetimeString, 'Europe/Berlin');
+  }
 }
 
 module.exports = ExternalEvent;

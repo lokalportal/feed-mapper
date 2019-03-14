@@ -1,18 +1,17 @@
-const axios          = require('axios');
+const axios = require('axios');
 const parseXMLString = require('xml2js').parseString;
 
 class XMLFeedMapper {
-
-    /**
+  /**
      * Loads the feed set up in #feedUrl through a GET request
      *
      * @returns {Promise<String>} The feed's content
      */
-    getFeed() {
-        return axios.get(this.constructor.feedUrl()).then(response => response.data);
-    }
+  getFeed() {
+    return axios.get(this.constructor.feedUrl).then(response => response.data);
+  }
 
-    /**
+  /**
      * Loads the feed URL (expected to be XML) and pipes it through xml2js's parseString
      * to convert it to a javascript object.
      *
@@ -23,19 +22,19 @@ class XMLFeedMapper {
      *
      * @returns {Promise<Object>} The parsed feed as javascript object
      */
-    getJSONFeed() {
-        return this.getFeed()
-            .then(xml => {
-                return new Promise((resolve, reject) => {
-                    parseXMLString(xml, {emptyTag: null, trim: true}, (err, result) => {
-                        if (err)
-                            reject(err);
-                        else
-                            resolve(result);
-                    });
-                });
-            })
-    }
+  getJSONFeed() {
+    return this.getFeed()
+      .then(xml => {
+        return new Promise((resolve, reject) => {
+          parseXMLString(xml, { emptyTag: null, trim: true }, (err, result) => {
+            if (err)
+              reject(err);
+            else
+              resolve(result);
+          });
+        });
+      });
+  }
 }
 
 module.exports = XMLFeedMapper;

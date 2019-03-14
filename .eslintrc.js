@@ -14,7 +14,16 @@ module.exports = {
   },
   'rules': {
     'curly': ['error', 'multi-or-nest'],
-    'indent': ['error', 4],
+    'indent': ['error', 2],
+    'key-spacing': ['error', { 'align': 'value' }],
+    'no-multi-spaces': [
+      'error', {
+        'exceptions': {
+          'Property': true,
+          'VariableDeclarator': true
+        }
+      }
+    ],
     'no-return-assign': ['off'],
     'semi': ['error', 'always'],
     'space-before-function-paren': ['error', 'never']
