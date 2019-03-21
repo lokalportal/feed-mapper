@@ -16,14 +16,14 @@ class MappingRequestHandler {
     Configuration.feedName = this.MapperClass.feedName;
 
     new this.MapperClass().getData(this.request.query)
-      .then(json => this.response.send({ 'data': json }))
+      .then(json => this.response.status(200).send({ 'data': json }))
       .catch(error => {
         Configuration.logger.error(error);
 
         if (error instanceof Object)
-          return this.response.send({ error: error.message, stack: error.stack.split('\n') });
+          return this.response.status(500).send({ error: error.message, stack: error.stack.split('\n') });
         else
-          return this.response.send({ error: error });
+          return this.response.status(500).send({ error: error });
       });
   }
 }
