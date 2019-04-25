@@ -12,10 +12,12 @@ class MappingRequestHandler {
      * and responds with the mapped version as JSON.
      */
   handleRequest() {
-    Configuration.feedUrl = this.MapperClass.feedUrl;
-    Configuration.feedName = this.MapperClass.feedName;
+    let mapper = new this.MapperClass(this.request.query);
 
-    new this.MapperClass().getData(this.request.query)
+    Configuration.feedUrl = mapper.feedUrl;
+    Configuration.feedName = mapper.feedName;
+
+    mapper.getData()
       .then(json => this.response.status(200).send({ 'data': json }))
       .catch(error => {
         Configuration.logger.error(error);

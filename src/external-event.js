@@ -77,17 +77,49 @@ class ExternalEvent {
     if (placeIDCache[this.placesLookupString]) return placeIDCache[this.placesLookupString];
 
     // Otherwise, cache a new promise which performs the actual google places lookup
-    return placeIDCache[this.placesLookupString] = googleMapsClient.geocode({ address: this.placesLookupString })
+    return placeIDCache[this.placesLookupString] = this.placeLookupThroughGeocode(this.placesLookupString)
+  }
+
+  /**
+   * Attempts to lookup the given query through Google's geocoding API
+   *
+   * @param query
+   * @returns {PromiseLike<T | never> | Promise<T | never> | *}
+   */
+  placeLookupThroughGeocode(query) {
+    return googleMapsClient.geocode({ address: query })
       .asPromise()
       .then(response => {
         if (response.json.status === 'ZERO_RESULTS') {
-          Configuration.logger.error(
-            `Zero Google Places results for "${this.placesLookupString}"`,
-            { params: { address: this.address } });
+          Configuration.logger.error(`Zero Google Places results for "${query}"`);
           return null;
         }
         return response.json.results[0].place_id;
-      });
+      })
+  }
+
+  /**
+   * Attempts to lookup the given query through Google's places autocomplete API
+   *
+   * @param query
+   * @returns {PromiseLike<T | never> | Promise<T | never> | *}
+   */
+  placeLookupThroughAutocomplete(query) {
+    return googleMapsClient.placesAutoComplete({
+        input: query,
+        sessiontoken: query,
+        types: ['geocode'],
+        language: 'de',
+        components: {country: 'de'}
+      })
+      .asPromise()
+      .then(response => {
+        if (response.json.status === 'ZERO_RESULTS') {
+          Configuration.logger.error(`Zero Google Places results for "${query}"`);
+          return null;
+        }
+        return response.json.predictions[0].place_id;
+      })
   }
 
   static momentTime(datetimeString) {

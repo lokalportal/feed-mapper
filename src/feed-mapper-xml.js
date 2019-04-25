@@ -8,7 +8,7 @@ class XMLFeedMapper {
      * @returns {Promise<String>} The feed's content
      */
   getFeed() {
-    return axios.get(this.constructor.feedUrl).then(response => response.data);
+    return axios.get(this.feedUrl).then(response => response.data);
   }
 
   /**
